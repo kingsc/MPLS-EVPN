@@ -1,0 +1,103 @@
+! Command: show running-config
+! device: SWITCH2 (vEOS, EOS-4.20.1F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname SWITCH2
+!
+spanning-tree mode mstp
+no spanning-tree vlan 4094
+!
+aaa authorization exec default local
+!
+no aaa root
+aaa authentication policy local allow-nopassword-remote-login
+!
+username admin privilege 15 role network-admin nopassword
+!
+vrf definition CORP
+!
+vrf definition RND
+!
+interface Ethernet1
+   no switchport
+   ip address 192.168.254.1/31
+   isis enable 1
+!
+interface Ethernet2
+   no switchport
+   ip address 192.168.254.7/31
+   isis enable 1
+!
+interface Ethernet3
+   shutdown
+!
+interface Ethernet4
+   shutdown
+!
+interface Ethernet5
+   shutdown
+!
+interface Ethernet6
+   shutdown
+!
+interface Ethernet7
+   no switchport
+   vrf forwarding CORP
+   ip address 192.168.254.10/31
+!
+interface Loopback1
+   ip address 192.168.255.2/32
+   isis enable 1
+!
+interface Management1
+   ip address 172.16.128.22/24
+!
+ip routing
+ip routing vrf CORP
+ip routing vrf RND
+!
+mpls ip
+!
+router bgp 64600
+   router-id 192.168.255.2
+   neighbor ARISTA peer-group
+   neighbor ARISTA remote-as 64600
+   neighbor ARISTA next-hop-self
+   neighbor ARISTA update-source Loopback1
+   neighbor ARISTA send-community extended
+   neighbor ARISTA maximum-routes 12000 
+   neighbor 192.168.255.5 peer-group ARISTA
+   !
+   vrf CORP
+      rd 192.168.255.2:10
+      route-target import 192.168.255.1:10
+      route-target export 192.168.255.2:10
+      router-id 192.168.255.2
+      neighbor 192.168.254.11 remote-as 65000
+      neighbor 192.168.254.11 maximum-routes 12000 
+   !
+   vrf RND
+      rd 192.168.255.2:20
+      route-target import 192.168.255.1:20
+      route-target export 192.168.255.2:20
+      router-id 192.168.255.2
+!
+router isis 1
+   net 49.0001.0100.1002.00
+   is-type level-2
+   log-adjacency-changes
+   authentication mode md5
+   authentication key 7 2FxrkNYPBNNpn3hz5KblEA==
+   !
+   address-family ipv4 unicast
+   !
+   segment-routing mpls
+      router-id 192.168.255.2
+      no shutdown
+!
+end

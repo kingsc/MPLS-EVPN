@@ -1,0 +1,77 @@
+! Command: show running-config
+! device: SWITCH1 (vEOS, EOS-4.20.1F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+transceiver qsfp default-mode 4x10G
+!
+hostname SWITCH1
+!
+sflow destination 172.16.128.1
+sflow source-interface Management1
+!
+spanning-tree mode mstp
+no spanning-tree vlan 4094
+!
+aaa authorization exec default local
+!
+no aaa root
+aaa authentication policy local allow-nopassword-remote-login
+!
+username admin privilege 15 role network-admin nopassword
+!
+vrf definition CORP
+!
+vrf definition RND
+!
+interface Ethernet1
+   no switchport
+   ip address 192.168.254.11/31
+!
+interface Ethernet2
+   shutdown
+!
+interface Ethernet3
+   shutdown
+!
+interface Ethernet4
+   shutdown
+!
+interface Ethernet5
+   shutdown
+!
+interface Ethernet6
+   shutdown
+!
+interface Ethernet7
+   shutdown
+!
+interface Loopback1
+   ip address 192.168.255.1/32
+!
+interface Loopback2
+   ip address 192.168.253.0/32
+!
+interface Loopback3
+!
+interface Management1
+   ip address 172.16.128.21/24
+   no lldp transmit
+!
+ip routing
+ip routing vrf CORP
+ip routing vrf RND
+!
+router bgp 65000
+   router-id 192.168.255.1
+   neighbor ARISTA peer-group
+   neighbor ARISTA remote-as 64600
+   neighbor ARISTA maximum-routes 12000 
+   neighbor 192.168.254.10 peer-group ARISTA
+   network 192.168.253.0/32
+!
+management api http-commands
+   protocol unix-socket
+   no shutdown
+!
+end

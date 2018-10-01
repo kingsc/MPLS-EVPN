@@ -1,0 +1,117 @@
+! Command: show running-config
+! device: SWITCH5 (vEOS, EOS-4.20.1F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+event-handler MGMTIP
+   trigger on-boot
+   action bash /mnt/flash/mylab_mgmtAuto.py
+!
+event-handler PORTDES
+   trigger on-boot
+   action bash /mnt/flash/portAuto
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname SWITCH5
+!
+spanning-tree mode mstp
+no spanning-tree vlan 4094
+spanning-tree mst 0 priority 4096
+!
+aaa authorization exec default local
+!
+no aaa root
+aaa authentication policy local allow-nopassword-remote-login
+!
+username admin privilege 15 role network-admin nopassword
+username eos privilege 15 secret sha512 $6$FUJPD6rwxsc4kVLk$2r5aLTTgMgsF/5XahFKK2aw3BXtYNNgcKs8XtRwjkg2xrEhcm8ope.5FHitUMESeukSUH/0WPoaeqnhCWbX551
+!
+vrf definition CORP
+!
+vrf definition RND
+!
+interface Ethernet1
+   no switchport
+   ip address 192.168.254.5/31
+   isis enable 1
+!
+interface Ethernet2
+   no switchport
+   ip address 192.168.254.9/31
+   isis enable 1
+!
+interface Ethernet3
+   shutdown
+!
+interface Ethernet4
+   shutdown
+!
+interface Ethernet5
+   shutdown
+!
+interface Ethernet6
+   no switchport
+   vrf forwarding CORP
+   ip address 192.168.254.12/31
+!
+interface Ethernet7
+!
+interface Loopback1
+   ip address 192.168.255.5/32
+   isis enable 1
+!
+interface Management1
+   description To_SWITCH2_Management1
+   ip address 172.16.128.25/24
+   no lldp transmit
+!
+ip virtual-router mac-address 00:1c:de:ad:be:ef
+!
+ip routing
+ip routing vrf CORP
+ip routing vrf RND
+!
+monitor session TEST destination Ethernet7
+!
+mpls ip
+!
+router bgp 64600
+   router-id 192.168.255.5
+   neighbor ARISTA peer-group
+   neighbor ARISTA remote-as 64600
+   neighbor ARISTA next-hop-self
+   neighbor ARISTA update-source Loopback1
+   neighbor ARISTA maximum-routes 12000 
+   neighbor 192.168.255.2 peer-group ARISTA
+   !
+   vrf CORP
+      rd 192.168.255.5:10
+      route-target import 192.168.255.2:10
+      route-target export 192.168.255.5:10
+      router-id 192.168.255.5
+      neighbor 192.168.254.13 remote-as 65001
+      neighbor 192.168.254.13 maximum-routes 12000 
+   !
+   vrf RND
+      rd 192.168.255.5:20
+      route-target import 192.168.255.2:20
+      route-target export 192.168.255.5:20
+      router-id 192.168.255.5
+!
+router isis 1
+   net 49.0001.0100.1005.00
+   is-type level-2
+   log-adjacency-changes
+   authentication mode md5
+   authentication key 7 2FxrkNYPBNNpn3hz5KblEA==
+   !
+   address-family ipv4 unicast
+!
+management api http-commands
+   protocol unix-socket
+   no shutdown
+!
+end
